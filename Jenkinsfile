@@ -1,44 +1,33 @@
 pipeline {
-    
-    agent { 
-        node{
-            label "dev"
-            
-        }
-    }
-    
-    stages{
-        stage("Clone Code"){
-            steps{
-                git url: "https://github.com/LondheShubham153/django-notes-app.git", branch: "main"
-                echo "Aaj toh LinkedIn Post bannta hai boss"
-            }
-        }
-        stage("Build & Test"){
-            steps{
-                sh "docker build . -t notes-app-jenkins:latest"
-            }
-        }
-        stage("Push to DockerHub"){
-            steps{
-                withCredentials(
-                    [usernamePassword(
-                        credentialsId:"dockerCreds",
-                        passwordVariable:"dockerHubPass", 
-                        usernameVariable:"dockerHubUser"
-                        )
-                    ]
-                ){
-                sh "docker image tag notes-app-jenkins:latest ${env.dockerHubUser}/notes-app-jenkins:latest"
-                sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
-                sh "docker push ${env.dockerHubUser}/notes-app-jenkins:latest"
+    agent any
+
+    stages {
+        stage('Cloning') {
+            steps {
+                echo 'Code Cloning'
+                git url: "https://github.com/ahmedasifsafi/my-new-repo.git", branch: "main"
+             }
+                 }
+        stage('Build') {
+            steps {
+                echo 'Code Building'
+                sh "docker build -t myapp ."
                 }
             }
-        }
-        
-        stage("Deploy"){
-            steps{
-                sh "docker compose up -d"
+        stage('Deploy') {
+            steps {
+                echo 'Code Deployment to Docker HUB'
+                withCredentials([usernamePassword(credentialsId:"DockerHubUserPass", passwordVariable:"HubPass", usernameVariable: "HubUser" )]){
+                sh "docker tag myapp ${HubUser}/myapp:latest"
+                sh "docker login -u ${HubUser} -p ${HubPass} "            
+                sh "docker push ${HubUser}/myapp:latest"    
+                 }
+                }
+              }     
+        stage('Container Creation') {
+            steps {
+                echo 'Creating Container'
+                sh "docker-compose down && docker-compose up -d"
             }
         }
     }
